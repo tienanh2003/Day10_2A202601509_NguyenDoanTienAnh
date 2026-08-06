@@ -1,0 +1,12 @@
+{
+  "report_name": "corrupted_quality",
+  "row_count": 22,
+  "paper_id_not_null": true,
+  "paper_id_unique": false,
+  "title_not_null": true,
+  "summary_not_empty": false,
+  "avg_summary_chars": 1334.2272727272727,
+  "max_age_days": 5000,
+  "stale_count": 4,
+  "all_passed": false
+}
