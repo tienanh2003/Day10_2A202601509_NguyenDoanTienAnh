@@ -6,8 +6,8 @@
 | :--- | :---: | :---: | :---: |
 | **Retrieval Hit Rate** | 1.0000 (100.0%) | 0.3333 (33.3%) | 1.0000 (100.0%) |
 | **Mean Token F1** | 0.0920 | 0.0198 | 0.0920 |
-| **LLM Judge Accuracy** | 0.0000 (0.0%) | 0.0000 (0.0%) | 0.0000 (0.0%) |
-| **Mean LLM Judge Score** | 1.00 / 5.0 | 1.00 / 5.0 | 1.00 / 5.0 |
+| **LLM Judge Accuracy** | 0.0000 (0.0%) | 0.4444 (44.4%) | 1.0000 (100.0%) |
+| **Mean LLM Judge Score** | 1.00 / 5.0 | 2.33 / 5.0 | 4.28 / 5.0 |
 | **Data Quality Check** | PASSED | FAILED | PASSED |
 | **Freshness Status** | FRESH | STALE | FRESH |
 | **Stale Rows** | 0 | 4 | 0 |

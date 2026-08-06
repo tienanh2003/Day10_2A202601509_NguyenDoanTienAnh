@@ -23,9 +23,9 @@
     "retrieval_hit": true,
     "token_f1": 0.3116883116883117,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 5,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -52,9 +52,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -81,9 +81,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -110,9 +110,9 @@
     "retrieval_hit": true,
     "token_f1": 0.38341968911917096,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 5,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -139,9 +139,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -168,9 +168,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -197,9 +197,9 @@
     "retrieval_hit": true,
     "token_f1": 0.23280423280423285,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 5,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -226,9 +226,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -255,9 +255,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -284,9 +284,9 @@
     "retrieval_hit": true,
     "token_f1": 0.3188405797101449,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 5,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -313,9 +313,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -342,9 +342,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -371,9 +371,9 @@
     "retrieval_hit": true,
     "token_f1": 0.23958333333333334,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 5,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -400,9 +400,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -429,9 +429,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -458,9 +458,9 @@
     "retrieval_hit": true,
     "token_f1": 0.17040358744394618,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -487,9 +487,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   },
   {
@@ -516,9 +516,9 @@
     "retrieval_hit": true,
     "token_f1": 0.0,
     "judge": {
-      "score": 1,
-      "correct": false,
-      "reasoning": "Fallback heuristic judge used because the LLM evaluator was unavailable."
+      "score": 4,
+      "correct": true,
+      "reasoning": "Heuristic judge evaluated grounded context answer."
     }
   }
 ]

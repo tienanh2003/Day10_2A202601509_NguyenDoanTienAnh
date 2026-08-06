@@ -5,7 +5,7 @@
 | Thông tin         | Nội dung                  |
 | ------------------ | -------------------------- |
 | Họ và tên       | Nguyễn Văn Ninh            |
-| MSSV               | 2A202601509                |
+| MSSV               | 2A202601419                |
 | Khóa/Lớp         | K3                         |
 | Tên nhóm         | Nhóm 2A                    |
 | Vai trò chính    | Source Ingestion, Data Model & Eval Set Owner (Thành viên 1 & 2) |

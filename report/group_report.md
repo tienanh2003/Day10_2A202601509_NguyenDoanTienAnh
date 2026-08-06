@@ -14,7 +14,7 @@
 | STT | Họ và tên | MSSV | Vai trò chính | Module/deliverable sở hữu |
 | --: | --- | --- | --- | --- |
 | 1 | Nguyễn Đoàn Tiến Anh | 2A202601509 | Member 3 & 4 (Data Observability, Corruption & Integration Owner) | `quality.py`, `reporting.py`, `corruption.py`, `phase1.py`, `corruption_flow.py` |
-| 2 | Nguyễn Văn Ninh | 2A202601509 | Member 1 & 2 (Source Ingestion, Data Model & Eval Set Owner) | `src/ingestion/crossref.py`, `src/ingestion/cleaning.py`, `src/evaluation/testset.py` |
+| 2 | Nguyễn Văn Ninh | 2A202601419 | Member 1 & 2 (Source Ingestion, Data Model & Eval Set Owner) | `src/ingestion/crossref.py`, `src/ingestion/cleaning.py`, `src/evaluation/testset.py` |
 
 ## 2. Tóm tắt kết quả
 
