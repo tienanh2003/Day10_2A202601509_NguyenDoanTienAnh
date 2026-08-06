@@ -120,6 +120,18 @@ Project cũng hỗ trợ `openai`, `anthropic`, `openrouter`, `ollama` và OpenA
 
 Không commit `.env`, API key hoặc secret lên GitHub.
 
+## 3.1. So do pipeline va artifact handoff
+
+De nhin nhanh flow dieu phoi tu `raw -> clean -> index -> evaluate -> report`, xem tai lieu:
+
+- [Pipeline handoff](src/pipelines/PIPELINE_HANDOFF.md)
+
+Tai lieu nay tong hop:
+
+- owner/scope/branch de tach viec
+- artifact contract dang duoc `src/core/config.py` quan ly
+- so do baseline, corruption, repair theo dung code hien tai
+
 ## 4. Hiểu starter trước khi code
 
 Các thư mục chính:

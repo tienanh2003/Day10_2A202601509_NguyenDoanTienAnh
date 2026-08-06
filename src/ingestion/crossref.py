@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import hashlib
 from pathlib import Path
 import re
 import time
@@ -48,13 +49,43 @@ def _extract_date(item: dict, fields: list[str]) -> str:
     return "2025-01-01"
 
 
+def _stable_paper_id(item: dict, fallback_index: int) -> str:
+    doi = normalize_whitespace(str(item.get("DOI", ""))).lower()
+    if doi:
+        return doi
+
+    title_raw = item.get("title", [])
+    if isinstance(title_raw, list):
+        title = normalize_whitespace(str(title_raw[0])) if title_raw else ""
+    else:
+        title = normalize_whitespace(str(title_raw))
+
+    author = ""
+    author_entries = item.get("author", [])
+    if author_entries and isinstance(author_entries[0], dict):
+        author = normalize_whitespace(
+            f"{author_entries[0].get('given', '')} {author_entries[0].get('family', '')}"
+        ).lower()
+
+    published = _extract_date(
+        item,
+        ["published", "published-print", "published-online", "issued", "created", "deposited"],
+    )
+    url = normalize_whitespace(str(item.get("URL", ""))).lower()
+    fingerprint = "||".join(part for part in [title.lower(), author, published, url] if part)
+    if not fingerprint:
+        fingerprint = f"crossref-item-{fallback_index}"
+    digest = hashlib.sha1(fingerprint.encode("utf-8")).hexdigest()[:16]
+    return f"crossref-{digest}"
+
+
 def parse_crossref_payload(payload: dict) -> list[PaperRecord]:
     items = payload.get("message", {}).get("items", [])
     records: list[PaperRecord] = []
 
-    for item in items:
+    for item_index, item in enumerate(items, start=1):
         doi = item.get("DOI", "").strip()
-        paper_id = doi if doi else f"crossref_{len(records)+1:04d}"
+        paper_id = _stable_paper_id(item, fallback_index=item_index)
 
         title_raw = item.get("title", [])
         if isinstance(title_raw, list):
@@ -124,15 +155,29 @@ def fetch_source_records(settings: Settings) -> list[PaperRecord]:
     headers = {"User-Agent": "AgenticDataPipeline/1.0 (mailto:student@example.com)"}
 
     payload: dict | None = None
-    for attempt in range(3):
+    max_attempts = 5
+    for attempt in range(max_attempts):
         try:
             resp = requests.get(url, params=params, headers=headers, timeout=15)
             if resp.status_code == 200:
                 payload = resp.json()
                 break
-            time.sleep(1)
+            if resp.status_code in {429, 503}:
+                retry_after = resp.headers.get("Retry-After", "").strip()
+                if retry_after.isdigit():
+                    sleep_seconds = int(retry_after)
+                else:
+                    sleep_seconds = min(2 ** attempt, 16)
+                time.sleep(max(1, sleep_seconds))
+                continue
+            if 500 <= resp.status_code < 600 and attempt < max_attempts - 1:
+                time.sleep(min(2 ** attempt, 16))
+                continue
+            resp.raise_for_status()
         except Exception:
-            time.sleep(1)
+            if attempt == max_attempts - 1:
+                break
+            time.sleep(min(2 ** attempt, 16))
 
     if payload is None:
         if settings.paths.raw_api_response.exists():

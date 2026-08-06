@@ -1,0 +1,14 @@
+{
+  "raw_record_count": 24,
+  "clean_record_count": 24,
+  "drop_counts": {
+    "missing_required_fields": 0,
+    "summary_too_short": 0,
+    "duplicate_paper_id": 0
+  },
+  "drop_samples": {
+    "missing_required_fields": [],
+    "summary_too_short": [],
+    "duplicate_paper_id": []
+  }
+}

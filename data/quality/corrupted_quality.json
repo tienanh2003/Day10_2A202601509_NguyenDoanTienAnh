@@ -3,10 +3,22 @@
   "row_count": 22,
   "paper_id_not_null": true,
   "paper_id_unique": false,
+  "duplicate_paper_id_count": 2,
   "title_not_null": true,
   "summary_not_empty": false,
+  "authors_not_empty": true,
+  "categories_not_empty": true,
+  "null_primary_field_counts": {
+    "paper_id": 0,
+    "title": 0,
+    "summary": 5,
+    "authors": 0,
+    "categories": 0
+  },
   "avg_summary_chars": 1334.2272727272727,
   "max_age_days": 5000,
   "stale_count": 4,
+  "latest_source_update": "2026-07-30",
+  "oldest_source_update": "2026-02-13",
   "all_passed": false
 }

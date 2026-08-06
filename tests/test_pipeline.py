@@ -41,6 +41,21 @@ class TestDataPipeline(unittest.TestCase):
         self.assertEqual(record.published, "2025-03-15")
         self.assertEqual(len(record.authors), 2)
 
+    def test_parse_crossref_payload_stable_fallback_id(self):
+        mock_item = {
+            "title": ["Fallback Title"],
+            "abstract": "This abstract is long enough to survive parsing and represents a fallback identifier test case for Crossref payload parsing.",
+            "author": [{"given": "Fallback", "family": "Author"}],
+            "subject": ["Computer Science"],
+            "published": {"date-parts": [[2025, 4, 1]]},
+            "URL": "https://example.org/fallback",
+        }
+        payload = {"message": {"items": [mock_item]}}
+        first = parse_crossref_payload(payload)
+        second = parse_crossref_payload(payload)
+        self.assertEqual(first[0].paper_id, second[0].paper_id)
+        self.assertTrue(first[0].paper_id.startswith("crossref-"))
+
     def test_build_clean_dataframe(self):
         mock_payloads = [
             {
@@ -90,6 +105,7 @@ class TestDataPipeline(unittest.TestCase):
         self.assertIn("question", test_set[0])
         self.assertIn("ground_truth", test_set[0])
         self.assertIn("ground_truth_doc_ids", test_set[0])
+        self.assertTrue(any("chủ đề" in item["question"] for item in test_set))
 
     def test_quality_and_freshness(self):
         fresh_date = (self.run_date - timedelta(days=10)).strftime("%Y-%m-%d")
@@ -115,6 +131,9 @@ class TestDataPipeline(unittest.TestCase):
         freshness = build_freshness_report(df_clean, self.settings, self.settings.paths.quality_dir / "unit_test_freshness.json")
         
         self.assertTrue(quality["all_passed"])
+        self.assertEqual(quality["duplicate_paper_id_count"], 0)
+        self.assertTrue(quality["authors_not_empty"])
+        self.assertTrue(quality["categories_not_empty"])
         self.assertTrue(freshness["is_fresh"])
 
 

@@ -203,3 +203,21 @@ class LocalEmbeddingIndex:
         if needle in self.documents_by_title:
             return self.documents_by_title[needle]
         return None
+
+    def build_smoke_checks(self, sample_size: int = 3) -> list[dict[str, Any]]:
+        checks: list[dict[str, Any]] = []
+        for document in self.documents[:sample_size]:
+            query = f"What is the main contribution of '{document['title']}'?"
+            results = self.search(query, top_k=1)
+            lookup_result = self.lookup(document["paper_id"])
+            checks.append(
+                {
+                    "paper_id": document["paper_id"],
+                    "title": document["title"],
+                    "semantic_query": query,
+                    "top_search_paper_id": results[0].paper_id if results else None,
+                    "top_search_title": results[0].title if results else None,
+                    "lookup_hit": bool(lookup_result),
+                }
+            )
+        return checks

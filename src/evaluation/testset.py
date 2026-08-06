@@ -22,6 +22,7 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
         summary = str(row["summary"])
         authors_joined = str(row["authors_joined"])
         published = str(row["published"])
+        categories_joined = str(row["categories_joined"])
 
         # Summary question
         test_set.append(
@@ -54,6 +55,18 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
                 "question_type": "factual",
                 "question": f"Bài báo '{title}' được xuất bản vào ngày nào?",
                 "ground_truth": published,
+                "ground_truth_doc_ids": [paper_id],
+            }
+        )
+        sample_idx += 1
+
+        # Categories question
+        test_set.append(
+            {
+                "id": f"q{sample_idx}",
+                "question_type": "factual",
+                "question": f"Bài báo '{title}' thuộc các chủ đề nào?",
+                "ground_truth": categories_joined,
                 "ground_truth_doc_ids": [paper_id],
             }
         )

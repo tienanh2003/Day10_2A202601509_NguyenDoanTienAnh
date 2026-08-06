@@ -106,6 +106,8 @@ def main() -> None:
         baseline_metrics=baseline_metrics,
         corrupted_metrics=corrupted_eval.summary,
         repaired_metrics=repaired_eval.summary,
+        corrupted_answers=corrupted_eval.answers,
+        repaired_answers=repaired_eval.answers,
         corrupted_quality=corrupted_quality,
         repaired_quality=repaired_quality,
         corrupted_freshness=corrupted_freshness,
