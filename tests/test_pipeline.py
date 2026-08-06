@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
 import pandas as pd
 
 from core.config import load_settings
@@ -16,16 +16,24 @@ class TestDataPipeline(unittest.TestCase):
 
     def test_parse_crossref_payload(self):
         mock_payload = {
-            "DOI": "10.1000/test.doi",
-            "title": ["<jats:p>Sample Title for Testing</jats:p>"],
-            "abstract": "<jats:p>This is a <b>test</b> summary with HTML tags that should be stripped cleanly during parsing.</jats:p>",
-            "author": [{"given": "Jane", "family": "Doe"}, {"given": "John", "family": "Smith"}],
-            "subject": ["Computer Science", "Artificial Intelligence"],
-            "published": {"date-parts": [[2025, 3, 15]]},
-            "URL": "https://doi.org/10.1000/test.doi",
-            "link": [{"URL": "https://arxiv.org/pdf/2503.12345.pdf", "content-type": "application/pdf"}],
+            "message": {
+                "items": [
+                    {
+                        "DOI": "10.1000/test.doi",
+                        "title": ["<jats:p>Sample Title for Testing</jats:p>"],
+                        "abstract": "<jats:p>This is a <b>test</b> summary with HTML tags that should be stripped cleanly during parsing.</jats:p>",
+                        "author": [{"given": "Jane", "family": "Doe"}, {"given": "John", "family": "Smith"}],
+                        "subject": ["Computer Science", "Artificial Intelligence"],
+                        "published": {"date-parts": [[2025, 3, 15]]},
+                        "URL": "https://doi.org/10.1000/test.doi",
+                        "link": [{"URL": "https://arxiv.org/pdf/2503.12345.pdf", "content-type": "application/pdf"}],
+                    }
+                ]
+            }
         }
-        record = parse_crossref_payload(mock_payload)
+        records = parse_crossref_payload(mock_payload)
+        self.assertEqual(len(records), 1)
+        record = records[0]
         self.assertEqual(record.paper_id, "10.1000/test.doi")
         self.assertIn("Sample Title for Testing", record.title)
         self.assertNotIn("<jats:p>", record.summary)
@@ -54,7 +62,7 @@ class TestDataPipeline(unittest.TestCase):
                 "URL": "https://doi.org/10.1000/paper.2",
             },
         ]
-        records = [parse_crossref_payload(p) for p in mock_payloads]
+        records = parse_crossref_payload({"message": {"items": mock_payloads}})
         df_clean = build_clean_dataframe(records, self.run_date)
         self.assertEqual(len(df_clean), 1)
         self.assertEqual(df_clean.iloc[0]["paper_id"], "10.1000/paper.1")
@@ -73,10 +81,10 @@ class TestDataPipeline(unittest.TestCase):
             }
             for i in range(5)
         ]
-        records = [parse_crossref_payload(p) for p in mock_payloads]
+        records = parse_crossref_payload({"message": {"items": mock_payloads}})
         df_clean = build_clean_dataframe(records, self.run_date)
         
-        test_path = self.settings.paths.eval_dir / "test_set_unit.json"
+        test_path = self.settings.paths.eval_testset.parent / "test_set_unit.json"
         test_set = build_test_set(df_clean, test_path)
         self.assertGreater(len(test_set), 0)
         self.assertIn("question", test_set[0])
@@ -84,23 +92,30 @@ class TestDataPipeline(unittest.TestCase):
         self.assertIn("ground_truth_doc_ids", test_set[0])
 
     def test_quality_and_freshness(self):
-        records = [
-            parse_crossref_payload({
-                "DOI": "10.1000/fresh.1",
-                "title": ["Fresh Paper"],
-                "abstract": "A valid long summary that satisfies length requirements and demonstrates clean data quality checks.",
-                "author": [{"given": "Jane", "family": "Doe"}],
-                "subject": ["Tech"],
-                "published": {"date-parts": [[2026, 1, 15]]},
-                "URL": "https://doi.org/10.1000/fresh.1",
-            })
-        ]
+        fresh_date = (self.run_date - timedelta(days=10)).strftime("%Y-%m-%d")
+        pub_year, pub_month, pub_day = map(int, fresh_date.split("-"))
+        mock_payload = {
+            "message": {
+                "items": [
+                    {
+                        "DOI": "10.1000/fresh.1",
+                        "title": ["Fresh Paper"],
+                        "abstract": "A valid long summary that easily satisfies the minimum 100 character length requirements and demonstrates clean data quality checks in unit tests.",
+                        "author": [{"given": "Jane", "family": "Doe"}],
+                        "subject": ["Tech"],
+                        "published": {"date-parts": [[pub_year, pub_month, pub_day]]},
+                        "URL": "https://doi.org/10.1000/fresh.1",
+                    }
+                ]
+            }
+        }
+        records = parse_crossref_payload(mock_payload)
         df_clean = build_clean_dataframe(records, self.run_date)
         quality = run_data_quality_checks(df_clean, self.settings, "unit_test_quality")
         freshness = build_freshness_report(df_clean, self.settings, self.settings.paths.quality_dir / "unit_test_freshness.json")
         
-        self.assertTrue(quality["passed"])
-        self.assertEqual(freshness["status"], "fresh")
+        self.assertTrue(quality["all_passed"])
+        self.assertTrue(freshness["is_fresh"])
 
 
 if __name__ == "__main__":

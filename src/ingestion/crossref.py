@@ -81,7 +81,7 @@ def parse_crossref_payload(payload: dict) -> list[PaperRecord]:
         categories = [normalize_whitespace(str(c)) for c in categories_raw if c]
         primary_category = categories[0] if categories else "Computer Science"
 
-        published = _extract_date(item, ["published-print", "published-online", "issued", "created", "deposited"])
+        published = _extract_date(item, ["published", "published-print", "published-online", "issued", "created", "deposited"])
         updated = _extract_date(item, ["deposited", "indexed"]) or published
 
         abs_url = item.get("URL", f"https://doi.org/{doi}" if doi else "")

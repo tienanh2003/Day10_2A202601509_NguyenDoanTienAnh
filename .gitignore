@@ -6,4 +6,6 @@ src/*.egg-info/
 lab/
 **/__pycache__/
 data/chroma/
+data/eval/*unit*
+data/quality/*unit*
 
