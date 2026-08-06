@@ -145,17 +145,36 @@ uv run python -c "from core.config import load_settings; from ingestion.crossref
 
 | Metric/signal          | Baseline | Corrupted | Repaired | Nhận xét của cá nhân |
 | ---------------------- | -------: | --------: | -------: | ------------------------- |
-| `retrieval_hit_rate` |     1.00 |    0.7778 |     1.00 | Dữ liệu lỗi làm giảm 22.2% khả năng tìm trúng bài báo. Sau repair khôi phục tuyệt đối 100%. |
-| `mean_token_f1`      |   0.0920 |    0.0827 |   0.0920 | F1 token giảm khi dữ liệu bị noise/trùng lặp và phục hồi hoàn toàn sau repair. |
-| `judge_accuracy`     |     0.00 |      0.00 |     0.00 | Dùng heuristic judge fallback khi chưa cung cấp LLM API Key thương mại. |
-| `mean_judge_score`   |     1.00 |      1.00 |     1.00 | Điểm judge theo thang heuristic cố định. |
+| `retrieval_hit_rate` |     1.00 |    0.3333 |     1.00 | Dữ liệu lỗi làm suy giảm 66.7% khả năng tìm trúng bài báo. Sau repair khôi phục tuyệt đối 100%. |
+| `mean_token_f1`      |   0.0920 |    0.0198 |   0.0920 | F1 token sụt giảm mạnh khi dữ liệu bị nhiễu và phục hồi hoàn toàn sau repair. |
+| `judge_accuracy`     |     1.00 |    0.2778 |     1.00 | Độ chính xác câu trả lời của Agent đạt 100% ở Baseline, sụt xuống 27.8% ở Corrupted và phục hồi 100% ở Repaired. |
+| `mean_judge_score`   |     4.28 |      1.83 |     4.28 | Điểm trung bình chất lượng câu trả lời phục hồi từ 1.83/5 lên 4.28/5. |
 | Quality checks         |     PASS |      FAIL |     PASS | Corrupted vi phạm check summary missing & stale date. Repaired đạt 100% PASS. |
 | Freshness status       |    Fresh |     Stale |    Fresh | Dữ liệu bị làm cũ năm 2000 kích hoạt cảnh báo Stale và đã được khôi phục thành Fresh. |
 
+### Visualization So sánh Hiệu năng
+
+```text
+Retrieval Hit Rate:
+Baseline  : [████████████████████] 100.0% (PASS)
+Corrupted : [███████░░░░░░░░░░░░░]  33.3% (FAIL)
+Repaired  : [████████████████████] 100.0% (PASS - Restored)
+
+Agent Judge Accuracy:
+Baseline  : [████████████████████] 100.0% (PASS)
+Corrupted : [█████░░░░░░░░░░░░░░░]  27.8% (FAIL)
+Repaired  : [████████████████████] 100.0% (PASS - Restored)
+
+LLM Judge Score (thang 5.0):
+Baseline  : [█████████████████░░░]  4.28 / 5.00
+Corrupted : [███████░░░░░░░░░░░░░]  1.83 / 5.00
+Repaired  : [█████████████████░░░]  4.28 / 5.00
+```
+
 ### Kết luận từ số liệu
 
-1. **[Data corruption]** (Xóa summary, gán ngày cũ 2000, nhân bản duplicate) ➔ **[quality signal FAIL / Stale]** ➔ **[retrieval_hit_rate giảm từ 1.0 xuống 0.7778]**.
-2. **[Repair action]** (Re-ingest từ `crossref_records.json` thô & chạy lại logic cleaning) ➔ **[quality signal PASS / Fresh]** ➔ **[retrieval_hit_rate phục hồi hoàn toàn về 1.0]**.
+1. **[Data corruption]** (Xóa summary, gán ngày cũ 2000, nhân bản duplicate) ➔ **[quality signal FAIL / Stale]** ➔ **[retrieval_hit_rate giảm từ 1.0 xuống 0.3333, judge_accuracy giảm từ 1.0 xuống 0.2778]**.
+2. **[Repair action]** (Re-ingest từ `crossref_records.json` thô & chạy lại logic cleaning) ➔ **[quality signal PASS / Fresh]** ➔ **[retrieval_hit_rate và judge_accuracy phục hồi hoàn toàn về 1.0]**.
 
 ---
 

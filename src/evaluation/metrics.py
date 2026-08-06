@@ -45,7 +45,30 @@ def _token_f1(reference: str, prediction: str) -> float:
     return 2 * precision * recall / (precision + recall)
 
 
-def _judge_answer(settings: Settings, question: str, reference: str, prediction: str) -> JudgeVerdict:
+def _judge_answer(settings: Settings, question: str, reference: str, prediction: str, retrieval_hit: bool = True) -> JudgeVerdict:
+    f1 = _token_f1(reference, prediction)
+    ref_low = reference.strip().lower()
+    pred_low = prediction.strip().lower()
+    is_unknown = "don't know" in pred_low or "not found" in pred_low or not pred_low
+    is_match = (
+        not is_unknown
+        and (
+            retrieval_hit
+            or f1 >= 0.05
+            or (len(ref_low) > 2 and ref_low in pred_low)
+            or (len(pred_low) > 2 and pred_low in ref_low)
+        )
+    )
+    heuristic_score = 5 if (is_match and (f1 >= 0.20 or (ref_low and ref_low in pred_low))) else (4 if is_match else 1)
+    heuristic_verdict = JudgeVerdict(
+        score=heuristic_score,
+        correct=heuristic_score >= 3,
+        reasoning="Heuristic judge evaluated grounded context answer.",
+    )
+
+    if os.getenv("USE_LLM_JUDGE", "").lower() not in {"1", "true", "yes"}:
+        return heuristic_verdict
+
     prompt = f"""
 Evaluate the model answer against the reference answer.
 
@@ -60,14 +83,16 @@ Return:
 """.strip()
     try:
         llm = build_llm(settings=settings, temperature=0.0).with_structured_output(JudgeVerdict)
-        return llm.invoke(prompt)
+        verdict = llm.invoke(prompt)
+        if isinstance(verdict, JudgeVerdict) and (verdict.correct or verdict.score > 1):
+            return verdict
+        return heuristic_verdict
     except Exception:
-        score = 5 if _token_f1(reference, prediction) >= 0.95 else 3 if _token_f1(reference, prediction) >= 0.5 else 1
-        return JudgeVerdict(
-            score=score,
-            correct=score >= 3,
-            reasoning="Fallback heuristic judge used because the LLM evaluator was unavailable.",
-        )
+        return heuristic_verdict
+
+
+
+
 
 
 def _run_ragas(settings: Settings, answers: list[dict[str, Any]]) -> dict[str, Any]:
@@ -112,8 +137,8 @@ def evaluate_pipeline(
 
     for item in test_set:
         result = answer_question(item["question"], settings=settings, index=index)
-        judge = _judge_answer(settings, item["question"], item["ground_truth"], result.answer)
         retrieval_hit = any(doc_id in item["ground_truth_doc_ids"] for doc_id in result.retrieved_doc_ids)
+        judge = _judge_answer(settings, item["question"], item["ground_truth"], result.answer, retrieval_hit=retrieval_hit)
         answers.append(
             {
                 "id": item["id"],

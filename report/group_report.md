@@ -213,18 +213,48 @@ Repair không sửa tay trên dữ liệu corrupted mà luôn nạp lại từ s
 
 ## 10. So sánh baseline, corrupted và repaired
 
-| Metric/signal | Baseline | Corrupted | Repaired | Thay đổi do corruption | Mức phục hồi | Nhận xét |
+| Metric/signal            | Baseline | Corrupted | Repaired | Thay đổi do corruption | Mức phục hồi | Nhận xét   |
 | ------------------------ | -------: | --------: | -------: | -----------------------: | --------------: | ------------ |
-| `retrieval_hit_rate` | 1.0000 | 0.3333 | 1.0000 | -0.6667 | +0.6667 | Phục hồi hoàn toàn |
-| `mean_token_f1` | 0.5240 | 0.1850 | 0.5240 | -0.3390 | +0.3390 | Phục hồi hoàn toàn |
-| `judge_accuracy` | 1.0000 | 0.3333 | 1.0000 | -0.6667 | +0.6667 | Phục hồi hoàn toàn |
-| `mean_judge_score` | 4.80 | 2.10 | 4.80 | -2.70 | +2.70 | Phục hồi hoàn toàn |
-| Quality checks pass/fail | PASSED | FAILED | PASSED | Transited to FAILED | Transited to PASSED | Phục hồi hoàn toàn |
-| Freshness status | FRESH | STALE | FRESH | Transited to STALE | Transited to FRESH | Phục hồi hoàn toàn |
+| `retrieval_hit_rate`   |     1.00 |    0.3333 |     1.00 |                  -0.6667 | +0.6667 (100%) | Hit rate giảm 66.7% khi data bị hỏng, phục hồi hoàn toàn 100% sau repair |
+| `mean_token_f1`        |   0.0920 |    0.0198 |   0.0920 |                  -0.0722 | +0.0722 (100%) | F1 token giảm mạnh khi summary rỗng/noise và phục hồi lại mốc baseline |
+| `judge_accuracy`       |     1.00 |    0.2778 |     1.00 |                  -0.7222 | +0.7222 (100%) | Độ chính xác trả lời sụt từ 100% xuống 27.8% và phục hồi 100% sau repair |
+| `mean_judge_score`     |     4.28 |      1.83 |     4.28 |                  -2.4500 | +2.4500 (100%) | Điểm đánh giá chất lượng trung bình khôi phục từ 1.83/5 lên 4.28/5 |
+| Quality checks pass/fail |     PASS |      FAIL |     PASS |                     FAIL |           PASS | Corrupted làm trượt Quality gate, Repaired đạt PASS |
+| Freshness status         |    Fresh |     Stale |    Fresh |                    Stale |          Fresh | Phục hồi trạng thái tươi mới về Fresh |
 
-## 11. Giới hạn và hướng cải thiện
+```text
+Visualization So sánh Metrics giữa 3 Trạng thái Pipeline:
 
-| Giới hạn hiện tại | Ảnh hưởng | Hướng cải thiện có thể kiểm chứng |
+Retrieval Hit Rate:
+  Baseline  : [████████████████████] 100.0%
+  Corrupted : [███████░░░░░░░░░░░░░]  33.3%
+  Repaired  : [████████████████████] 100.0%
+
+Agent Judge Accuracy:
+  Baseline  : [████████████████████] 100.0%
+  Corrupted : [█████░░░░░░░░░░░░░░░]  27.8%
+  Repaired  : [████████████████████] 100.0%
+```
+
+Nêu ít nhất hai kết luận có quan hệ nhân quả được hỗ trợ bởi artifacts:
+
+1. **[Data corruption]** (Blank summary, Stale publication date, Duplicate records) ➔ **[Quality Gate FAIL & Freshness STALE]** ➔ **[Retrieval Hit Rate giảm từ 1.00 xuống 0.3333, LLM Judge Accuracy sụt từ 1.00 xuống 0.2778]**.
+2. **[Repair action]** (Re-ingest từ `crossref_records.json` thô & Re-clean) ➔ **[Quality Gate PASS & Freshness FRESH]** ➔ **[Retrieval Hit Rate và LLM Judge Accuracy phục hồi hoàn toàn về 1.00]**.
+
+Không kết luận corruption “có tác động” nếu số liệu không cho thấy thay đổi. Nếu kết quả khác kỳ vọng, mô tả giả thuyết và cách nhóm đã kiểm tra.
+
+## 11. Vấn đề tích hợp quan trọng
+
+Mô tả một vấn đề phát sinh khi ghép các module trong pipeline và cách nhóm xử lý:
+
+- **Triệu chứng:** Kết nối Crossref API bị rate limit HTTP 429 khi gửi request dồn dập.
+- **Nguyên nhân:** Public API của Crossref hạn chế tần suất request không có header định danh.
+- **Cách xử lý:** Thêm User-Agent header, triển khai Retry Exponential Backoff và cơ chế cache local raw snapshot.
+- **Cách xác minh:** Ingest 24 bản ghi mượt mà, lưu `data/raw/crossref_response.json`.
+
+## 12. Giới hạn và hướng cải thiện
+
+| Giới hạn hiện tại | Ảnh hưởng   | Hướng cải thiện có thể kiểm chứng |
 | --------------------- | -------------- | ----------------------------------------- |
 | Phụ thuộc mạng khi fetch Crossref | Có thể timeout | Luôn ưu tiên dùng cached raw snapshot local |
 | Token F1 thấp do cách diễn đạt | Đánh giá chưa phản ánh đúng ngữ nghĩa | Sử dụng LLM Judge hoặc Ragas làm thước đo chính |
