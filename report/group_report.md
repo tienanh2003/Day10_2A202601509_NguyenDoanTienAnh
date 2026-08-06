@@ -13,9 +13,8 @@
 
 | STT | Họ và tên | MSSV | Vai trò chính | Module/deliverable sở hữu |
 | --: | --- | --- | --- | --- |
-| 1 | Nguyễn Đoàn Tiến Anh | 2A202601509 | Member 3 & Member 4 (Data Observability, Corruption & Integration Owner) | `quality.py`, `reporting.py`, `corruption.py`, `phase1.py`, `corruption_flow.py` |
-| 2 | Member 1 | 2A202600001 | Source Ingestion Owner | `crossref.py` |
-| 3 | Member 2 | 2A202600002 | Data Model & Eval Set Owner | `cleaning.py`, `testset.py` |
+| 1 | Nguyễn Đoàn Tiến Anh | 2A202601509 | Member 3 & 4 (Data Observability, Corruption & Integration Owner) | `quality.py`, `reporting.py`, `corruption.py`, `phase1.py`, `corruption_flow.py` |
+| 2 | Nguyễn Văn Ninh | 2A202601509 | Member 1 & 2 (Source Ingestion, Data Model & Eval Set Owner) | `src/ingestion/crossref.py`, `src/ingestion/cleaning.py`, `src/evaluation/testset.py` |
 
 ## 2. Tóm tắt kết quả
 
@@ -45,10 +44,10 @@ Crossref API (https://api.crossref.org/works)
 
 | Khối | Input | Xử lý chính | Output/artifact | Owner |
 | ----------------- | -------------- | -------------------------- | ------------------------ | -------------- |
-| Ingestion | Crossref REST API | Fetch, retry/backoff, parse `PaperRecord` | `data/raw/crossref_records.json` | Member 1 |
-| Cleaning | Raw `PaperRecord` list | Strip HTML/JATS tags, join authors, calc `age_days` & `text_for_embedding` | `data/clean/papers_clean.csv` | Member 2 |
-| Embedding/index | `papers_clean.csv` | MiniLM 384d embedding, ChromaDB PersistentClient | `data/chroma/`, `data/embeddings/` | Member 2 |
-| Evaluation | Clean DF & Chroma index | Frozen testset generator, LLM Judge (OpenRouter) | `data/eval/test_set.json`, `data/results/` | Member 2 |
+| Ingestion | Crossref REST API | Fetch API (Retry 429/503), parse payload, clean XML | `data/raw/crossref_response.json`<br>`data/raw/crossref_records.json` | Nguyễn Văn Ninh |
+| Cleaning | `crossref_records.json` | Normalize text, filter summary < 100, authors_joined, age_days, text_for_embedding | `data/clean/papers_clean.csv`<br>`data/clean/papers_clean.json` | Nguyễn Văn Ninh |
+| Embedding/index | `papers_clean.csv` | MiniLM 384d embedding, ChromaDB PersistentClient | `data/chroma/`, `data/embeddings/` | Nguyễn Văn Ninh |
+| Evaluation | Clean DF & Chroma index | Frozen testset generator, LLM Judge (OpenRouter) | `data/eval/test_set.json`, `data/results/` | Nguyễn Văn Ninh |
 | Observability | Clean DF, Settings | Completeness, uniqueness, freshness checks & markdown report | `data/quality/`, `data/reports/` | Nguyễn Đoàn Tiến Anh |
 | Corruption/repair | Clean DF & Raw Snapshot | Corrupt DF (drop, blank, noise) & Repair from raw snapshot | `data/clean/papers_clean_corrupted.csv`, `data/results/corruption_log.json` | Nguyễn Đoàn Tiến Anh |
 | Orchestration | Settings & Pipelines | Run Phase 1 baseline & Corruption Repair flow end-to-end | `script/run_phase1.py`, `script/run_corruption_flow.py` | Nguyễn Đoàn Tiến Anh |
@@ -62,7 +61,7 @@ Crossref API (https://api.crossref.org/works)
 | `LLM_PROVIDER` | `openrouter` |
 | `LLM_MODEL` | `nvidia/nemotron-3-ultra-550b-a55b:free` |
 | Embedding model | `sentence-transformers/all-MiniLM-L6-v2` |
-| Số lượng Crossref records | 24 |
+| Số lượng Crossref records | 24 records |
 | Retrieval `top_k` | 4 |
 | Freshness threshold | 180 days |
 
@@ -108,34 +107,65 @@ uv run python script/run_corruption_flow.py
 | Source | Crossref REST API (`https://api.crossref.org/works`) |
 | Query/filter | `query="agentic retrieval augmented generation"`, `filter="from-pub-date:...,has-abstract:true"` |
 | Thời điểm lấy dữ liệu | 2026-08-06 |
-| Số record nhận được | 24 |
-| Cơ chế retry/backoff | Retry 3 lần với timeout 15s, sleep backoff, fallback đọc snapshot local |
+| Số record nhận được | 24 records |
+| Cơ chế retry/backoff | Retry 3-4 lần với timeout 15s, sleep backoff, fallback đọc snapshot local |
 
 ### Raw và clean schema
 
 | Trường | Kiểu dữ liệu | Bắt buộc? | Ý nghĩa | Xử lý khi thiếu/sai |
 | --------------- | --------------- | ------------ | ----------- | ---------------------- |
-| `paper_id` | String | Có | Mã DOI hoặc ID duy nhất của bài báo | Fallback sinh ID theo định dạng `crossref_xxxx` |
-| `title` | String | Có | Tiêu đề bài báo khoa học | Strip HTML tags, drop hàng nếu thiếu |
+| `paper_id` | String | Có | Mã DOI hoặc ID duy nhất của bài báo | Fallback sinh ID theo định dạng `crossref_xxxx` / safe_slug |
+| `title` | String | Có | Tiêu đề bài báo khoa học | Strip HTML/XML tags, drop hàng nếu thiếu |
 | `summary` | String | Có | Tóm tắt bài báo (Abstract) | Strip `<jats:p>` XML tags, drop hàng nếu < 100 chars |
 | `authors` | List[String] | Không | Danh sách tác giả | Gộp thành `authors_joined`, gán `"Unknown Author"` nếu thiếu |
 | `published` | String | Có | Ngày xuất bản YYYY-MM-DD | Parse date-parts, mặc định `"2025-01-01"` |
 | `age_days` | Integer | Có | Số ngày từ lúc xuất bản đến hiện tại | Tính `max(0, (run_date - published_date).days)` |
+| `text_for_embedding` | String | Có | Chuỗi ngữ nghĩa dán nhãn cho ChromaDB | Combine: `Title: ... \| Authors: ... \| Summary: ...` |
+
+### Quy tắc cleaning
+
+| Quy tắc | Quality dimension liên quan | Số record bị tác động | Cách xác minh |
+| ---------------------------------------- | ---------------------------- | -------------------------: | -------------------- |
+| Loại bỏ record có summary < 100 ký tự | Completeness / Validity | 0 (API filter `has-abstract:true`) | Kiểm tra `summary_chars` trong `papers_clean.csv` |
+| Làm sạch các thẻ XML/HTML (`<jats:p>`, `<b>`, v.v.) | Validity / Uniqueness | 24 records | Kiểm tra chuỗi text không chứa ký tự `<...>` |
+| Deduplicate theo `paper_id` | Uniqueness | 0 (các DOI đều unique) | Check `df.duplicated(subset=['paper_id'])` = 0 |
+
+Giải thích cách tạo `text_for_embedding`, document ID và `age_days`:
+
+- `paper_id`: Sử dụng mã DOI trực tiếp từ Crossref (hoặc slug hóa title nếu thiếu DOI) để làm ID định danh duy nhất không đổi.
+- `text_for_embedding`: Kết hợp thông tin dạng `Title: {title} | Authors: {authors_joined} | Summary: {summary}` để tạo ngữ nghĩa đầy đủ nhất cho mô hình vector MiniLM.
+- `age_days`: Tính bằng `(run_date.date() - published_date).days` để đo số ngày tính từ khi bài báo được xuất bản.
 
 ## 6. Evaluation setup
 
 | Thành phần | Cấu hình thực tế |
 | ---------------------------------------- | ----------------------------- |
-| Số câu hỏi | 18 |
-| Các `question_type` | `factual` |
+| Số câu hỏi | 18 câu hỏi |
+| Các `question_type` | `factual` (vấn đáp về summary, authors, date, categories) |
 | Ground-truth document ID | List `[paper_id]` chứa thông tin đáp án |
 | Embedding model | `sentence-transformers/all-MiniLM-L6-v2` |
-| Vector store/collection | ChromaDB PersistentClient (`papers-baseline`) |
+| Vector store/collection | ChromaDB PersistentClient (`papers-baseline`, `papers-corrupted`, `papers-repaired`) |
 | Retrieval `top_k` | 4 |
 | LLM provider/model | OpenRouter / `nvidia/nemotron-3-ultra-550b-a55b:free` |
 | Test set dùng chung cho ba trạng thái | `data/eval/test_set.json` |
 
+Giải thích vì sao test set được giữ nguyên khi đánh giá baseline, corrupted và repaired:
+
+Giữ nguyên duy nhất một bộ câu hỏi đánh giá (Frozen Eval Set) đóng vai trò là hằng số kiểm thử. Việc này đảm bảo tính công bằng của thí nghiệm (controlled experiment), giúp đo lường chính xác tác động của sự thay đổi chất lượng dữ liệu lên hiệu năng tìm kiếm và trả lời của RAG Agent.
+
 ## 7. Kết quả baseline
+
+### Artifact checklist
+
+| Artifact | Đường dẫn thực tế | Trạng thái | Ghi chú |
+| ------------------------ | -------------------------------------- | ------------ | ---------- |
+| Raw response/records | `data/raw/` | Có | `crossref_response.json`, `crossref_records.json` |
+| Cleaned dataset | `data/clean/` | Có | `papers_clean.csv`, `papers_clean.json` |
+| Embedding manifest/index | `data/embeddings/` | Có | `papers_embeddings.json` |
+| Evaluation set | `data/eval/` | Có | `test_set.json` |
+| Baseline metrics | `data/results/baseline_metrics.json` | Có | Baseline retrieval_hit_rate = 1.0 |
+| Quality/freshness | `data/quality/` | Có | `freshness_report.json` |
+| Baseline report | `data/reports/phase1_report.md` | Có | Báo cáo baseline hoàn chỉnh |
 
 ### Baseline metrics
 
@@ -172,6 +202,14 @@ uv run python script/run_corruption_flow.py
 | Drop records | Xóa 20% bài báo mới nhất | 5 rows | Hit Rate sụt giảm | Hit Rate giảm từ 1.0 về 0.33 | Re-ingest từ raw snapshot |
 | Blank summary | Tẩy rỗng nội dung summary | 4 rows | Summary non-empty FAIL | ChromaDB vector bị lệch | Re-cleaning từ raw snapshot |
 | Stale date | Lùi ngày xuất bản về năm 2010 | 4 rows | Freshness STALE | Freshness chuyển sang STALE | Reset published date tu snapshot |
+
+Corruption log:
+- Đường dẫn: `data/results/corruption_log.json`
+- Trạng thái: Có
+- Nhận xét: Ghi chép chi tiết danh sách ID bản ghi bị tác động và loại corruption.
+
+Giải thích cách repair đảm bảo dữ liệu được phục hồi từ nguồn đáng tin cậy thay vì chỉ che kết quả lỗi:
+Repair không sửa tay trên dữ liệu corrupted mà luôn nạp lại từ snapshot nguồn đáng tin cậy (`data/raw/crossref_records.json`) và thực thi lại toàn bộ quy tắc cleaning chuẩn.
 
 ## 10. So sánh baseline, corrupted và repaired
 

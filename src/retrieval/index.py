@@ -36,7 +36,13 @@ class LocalEmbeddingIndex:
         self.embedding_backend = "chroma"
         self.embedding_model = MiniLMEmbeddings(settings.embedding_model)
         self.client = chromadb.PersistentClient(path=str(persist_path))
-        self.collection = self.client.get_collection(name=collection_name)
+        try:
+            self.collection = self.client.get_collection(name=collection_name)
+        except Exception:
+            self.collection = self.client.get_or_create_collection(
+                name=collection_name,
+                configuration={"hnsw": {"space": "cosine"}},
+            )
         self.documents_by_paper_id = {document["paper_id"].lower(): document for document in documents}
         self.documents_by_title = {document["title"].lower(): document for document in documents}
 
@@ -95,20 +101,23 @@ class LocalEmbeddingIndex:
         embedding_model = MiniLMEmbeddings(settings.embedding_model)
         client = chromadb.PersistentClient(path=str(persist_path))
         try:
-            client.delete_collection(name=collection_name)
+            collection = client.get_collection(name=collection_name)
+            existing_ids = collection.get().get("ids", [])
+            if existing_ids:
+                collection.delete(ids=existing_ids)
         except Exception:
-            pass
-        collection = client.create_collection(
-            name=collection_name,
-            configuration={"hnsw": {"space": "cosine"}},
-        )
-        embeddings = embedding_model.embed_documents([document["content"] for document in documents])
-        collection.add(
-            ids=[document["record_id"] for document in documents],
-            embeddings=embeddings,
-            documents=[document["content"] for document in documents],
-            metadatas=[document["metadata"] for document in documents],
-        )
+            collection = client.get_or_create_collection(
+                name=collection_name,
+                metadata={"hnsw:space": "cosine"},
+            )
+        if documents:
+            embeddings = embedding_model.embed_documents([document["content"] for document in documents])
+            collection.add(
+                ids=[document["record_id"] for document in documents],
+                embeddings=embeddings,
+                documents=[document["content"] for document in documents],
+                metadatas=[document["metadata"] for document in documents],
+            )
 
         manifest_path = embeddings_output_path or settings.paths.embeddings_json
         write_json(
@@ -121,12 +130,19 @@ class LocalEmbeddingIndex:
                 "documents": documents,
             },
         )
-        return cls(
-            settings=settings,
-            collection_name=collection_name,
-            documents=documents,
-            persist_path=persist_path,
-        )
+        instance = cls.__new__(cls)
+        instance.settings = settings
+        instance.collection_name = collection_name
+        instance.documents = documents
+        instance.persist_path = persist_path
+        instance.embedding_backend = "chroma"
+        instance.embedding_model = embedding_model
+        instance.client = client
+        instance.collection = collection
+        instance.documents_by_paper_id = {document["paper_id"].lower(): document for document in documents}
+        instance.documents_by_title = {document["title"].lower(): document for document in documents}
+        return instance
+
 
     @classmethod
     def load(cls, settings: Settings, embeddings_path: Path | None = None) -> "LocalEmbeddingIndex":
@@ -140,11 +156,26 @@ class LocalEmbeddingIndex:
 
     def search(self, query: str, top_k: int | None = None) -> list[SearchResult]:
         query_embedding = self.embedding_model.embed_query(query)
-        results = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k or self.settings.top_k,
-            include=["documents", "metadatas", "distances"],
-        )
+        try:
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=top_k or self.settings.top_k,
+                include=["documents", "metadatas", "distances"],
+            )
+        except Exception:
+            try:
+                self.collection = self.client.get_collection(name=self.collection_name)
+            except Exception:
+                self.collection = self.client.get_or_create_collection(
+                    name=self.collection_name,
+                    configuration={"hnsw": {"space": "cosine"}},
+                )
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=top_k or self.settings.top_k,
+                include=["documents", "metadatas", "distances"],
+            )
+
         ids = results.get("ids", [[]])[0]
         documents = results.get("documents", [[]])[0]
         metadatas = results.get("metadatas", [[]])[0]

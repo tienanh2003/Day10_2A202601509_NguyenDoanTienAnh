@@ -1,0 +1,12 @@
+{
+  "report_name": "baseline_quality",
+  "row_count": 24,
+  "paper_id_not_null": true,
+  "paper_id_unique": true,
+  "title_not_null": true,
+  "summary_not_empty": true,
+  "avg_summary_chars": 1727.4166666666667,
+  "max_age_days": 174,
+  "stale_count": 0,
+  "all_passed": true
+}

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, UTC
+import json
 import pandas as pd
 
 from core.config import load_settings
@@ -25,7 +26,7 @@ def main() -> None:
         records = fetch_source_records(settings)
         df_clean = build_clean_dataframe(records, run_date)
         df_clean.to_csv(settings.paths.clean_csv, index=False)
-        write_json(settings.paths.clean_json, df_clean.to_dict(orient="records"))
+        write_json(settings.paths.clean_json, json.loads(df_clean.to_json(orient="records")))
     else:
         df_clean = pd.DataFrame(read_json(settings.paths.clean_json))
 
@@ -45,7 +46,7 @@ def main() -> None:
     settings.paths.corrupted_clean_csv.parent.mkdir(parents=True, exist_ok=True)
     df_corrupted.to_csv(settings.paths.corrupted_clean_csv, index=False)
     df_corrupted.to_csv(settings.paths.clean_csv.parent / "papers_corrupted.csv", index=False)
-    write_json(settings.paths.corrupted_clean_json, df_corrupted.to_dict(orient="records"))
+    write_json(settings.paths.corrupted_clean_json, json.loads(df_corrupted.to_json(orient="records")))
 
     # 3. Build index & evaluate corrupted dataset
     print("Building Chroma index for corrupted data...")
@@ -76,7 +77,7 @@ def main() -> None:
 
     df_repaired = build_clean_dataframe(raw_records, run_date)
     df_repaired.to_csv(settings.paths.repaired_clean_csv, index=False)
-    write_json(settings.paths.repaired_clean_json, df_repaired.to_dict(orient="records"))
+    write_json(settings.paths.repaired_clean_json, json.loads(df_repaired.to_json(orient="records")))
 
     # 6. Build index & evaluate repaired dataset
     print("Building Chroma index for repaired data...")
